@@ -1,0 +1,3 @@
+include ':app:drag_edit_rv'
+include ':app'
+rootProject.name = "DargEdit"
