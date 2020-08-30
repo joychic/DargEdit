@@ -26,8 +26,8 @@ import kotlin.collections.ArrayList
 class FirstFragment : Fragment() {
 
     private val adapter = MultiTypeAdapter()
-
-    internal var appletDragList: MutableMap<Applet, Int> = ArrayMap()
+    private val finalList = getData()
+    internal var appletDragList: MutableMap<Applet, Any> = ArrayMap()
     private val emptyView = EmptyView(true)
 
     override fun onCreateView(
@@ -42,6 +42,7 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val recyclerView = view.findViewById<RecyclerView>(R.id.rv_list)
 
+        val offsetSize = 1
         adapter.register(AppletViewDelegate(object : OnItemClickListener<Applet> {
             override fun onItemClick(itemView: View, position: Int, value: Applet) {
                 val contains = appletDragList.contains(value)
@@ -49,14 +50,15 @@ class FirstFragment : Fragment() {
                 adapter.notifyItemChanged(position)
                 if (contains) {
                     //  回到原来的位置
-                    val toPosition = appletDragList[value]
-                    if (toPosition != null) {
-                        swapItem(position, toPosition)
-                        appletDragList.remove(value)
-                    }
+                    val toPosition = findPastPosition(value)
+                    swapItem(position, toPosition)
+                    appletDragList.remove(value)
                 } else {
-                    appletDragList[value] = position
-                    swapItem(position, appletDragList.size)
+                    val toPosition = appletDragList.size + offsetSize
+                    // appletDragList 记录上一个元素的值
+                    val preValue = findPreInFinal(value) ?: return
+                    appletDragList[value] = preValue
+                    swapItem(position, toPosition)
                 }
 
                 if (emptyView.visiable != appletDragList.isEmpty()) {
@@ -65,6 +67,31 @@ class FirstFragment : Fragment() {
                 }
 
             }
+
+            private fun findPreInFinal(applet: Applet): Any? {
+                finalList.forEachIndexed { index, value ->
+                    if (value == applet) {
+                        return finalList[index - 1]
+                    }
+                }
+                return null
+            }
+
+            private fun findPastPosition(applet: Applet): Int {
+
+                var pre = appletDragList[applet]
+                while (appletDragList.contains(pre)) {
+                    pre = appletDragList[pre]
+                }
+                adapter.items.forEachIndexed { index, value ->
+                    if (value == pre) {
+                        return index
+                    }
+                }
+                return -1
+            }
+
+
         }, object : OnItemLongClick<Applet> {
             override fun onItemLongClick(
                 itemView: View,
@@ -101,7 +128,6 @@ class FirstFragment : Fragment() {
     private fun getData(): ArrayList<Any> {
         val items = ArrayList<Any>()
         // todo  模拟数据
-
         items.add(Header("你也可以将常用的应用添加到首页，\n也可以按住拖动调整应用位置"))
         items.add(emptyView)
         items.add(Header("全部应用"))
@@ -156,8 +182,6 @@ class FirstFragment : Fragment() {
         items.add(Applet("盒马", ""))
         items.add(Applet("优酷视频", ""))
         items.add(Applet("景点门票", ""))
-
-
         return items
     }
 
