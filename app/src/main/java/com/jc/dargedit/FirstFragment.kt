@@ -26,7 +26,8 @@ import kotlin.collections.ArrayList
 class FirstFragment : Fragment() {
 
     private val adapter = MultiTypeAdapter()
-    private val finalList = getData()
+
+    private val offsetSize = 1
     internal var appletDragList: MutableMap<Applet, Any> = ArrayMap()
     private val emptyView = EmptyView(true)
 
@@ -42,7 +43,6 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val recyclerView = view.findViewById<RecyclerView>(R.id.rv_list)
 
-        val offsetSize = 1
         adapter.register(AppletViewDelegate(object : OnItemClickListener<Applet> {
             override fun onItemClick(itemView: View, position: Int, value: Applet) {
                 val contains = appletDragList.contains(value)
@@ -56,7 +56,7 @@ class FirstFragment : Fragment() {
                 } else {
                     val toPosition = appletDragList.size + offsetSize
                     // appletDragList 记录上一个元素的值
-                    val preValue = findPreInFinal(value) ?: return
+                    val preValue = findPreElement(value) ?: return
                     appletDragList[value] = preValue
                     swapItem(position, toPosition)
                 }
@@ -68,10 +68,10 @@ class FirstFragment : Fragment() {
 
             }
 
-            private fun findPreInFinal(applet: Applet): Any? {
-                finalList.forEachIndexed { index, value ->
+            private fun findPreElement(applet: Applet): Any? {
+                adapter.items.forEachIndexed { index, value ->
                     if (value == applet) {
-                        return finalList[index - 1]
+                        return adapter.items[index - 1]
                     }
                 }
                 return null
@@ -213,7 +213,7 @@ class FirstFragment : Fragment() {
             val toPosition = target.adapterPosition
 
             // 不支持拖拽的区域 return
-            if (toPosition > appletDragList.size - 1) {
+            if (toPosition > appletDragList.size + offsetSize - 1) {
                 return false
             }
 
